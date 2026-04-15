@@ -9,16 +9,36 @@ export const workflowId = (() => {
   return id;
 })();
 
+// ✅ SESSION ID FIX (NEW ADD)
+function getSessionId() {
+  let sessionId = localStorage.getItem("session_id");
+
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem("session_id", sessionId);
+  }
+
+  return sessionId;
+}
+
 export function createClientSecretFetcher(
   workflow: string,
   endpoint = `${import.meta.env.VITE_API_URL}/api/create-session`
 ) {
   return async (currentSecret: string | null) => {
-    
+
+    // ✅ session id use karo (NEW ADD)
+    const sessionId = getSessionId();
+
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workflow: { id: workflow } }),
+      
+      // ✅ BODY UPDATED (IMPORTANT FIX)
+      body: JSON.stringify({
+        workflow: { id: workflow },
+        user: sessionId, // 🔥 ye line fix hai
+      }),
     });
 
     const payload = (await response.json().catch(() => ({}))) as {

@@ -29,12 +29,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 async def root():
     return {"message": "Managed ChatKit Backend is running"}
-
-
+    
 @app.get("/health")
 async def health() -> Mapping[str, str]:
     return {"status": "ok"}
@@ -105,16 +103,21 @@ def respond(
     payload: Mapping[str, Any], status_code: int, cookie_value: str | None = None
 ) -> JSONResponse:
     response = JSONResponse(payload, status_code=status_code)
+
     if cookie_value:
         response.set_cookie(
             key=SESSION_COOKIE_NAME,
             value=cookie_value,
             max_age=SESSION_COOKIE_MAX_AGE_SECONDS,
             httponly=True,
-            samesite="lax",
-            secure=is_prod(),
+
+            # 🔥 IMPORTANT FIX (CHANGE THESE)
+            samesite="none",   # cross-site allow karega (Vercel + Render)
+            secure=True,       # HTTPS pe required hota hai
+
             path="/",
         )
+
     return response
 
 
@@ -172,11 +175,5 @@ def parse_json(response: httpx.Response) -> Mapping[str, Any]:
         return parsed if isinstance(parsed, Mapping) else {}
     except (json.JSONDecodeError, httpx.DecodingError):
         return {}
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # ya Vercel URL
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    
+  
