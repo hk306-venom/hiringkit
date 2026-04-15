@@ -14,8 +14,7 @@ export function createClientSecretFetcher(
   endpoint = `${import.meta.env.VITE_API_URL}/api/create-session`
 ) {
   return async (currentSecret: string | null) => {
-    if (currentSecret) return currentSecret;
-
+    
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
