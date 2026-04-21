@@ -3,7 +3,6 @@ import { ChatKit, useChatKit } from "@openai/chatkit-react";
 import { createClientSecretFetcher, workflowId } from "../lib/chatkitSession";
 
 export function ChatKitPanel() {
-  const [input, setInput] = useState("");
   const [voiceReply, setVoiceReply] = useState(false);
 
   const getClientSecret = useMemo(
@@ -17,65 +16,44 @@ export function ChatKitPanel() {
 
   // 🎤 Speech → Text
   const startListening = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Speech Recognition not supported");
+      alert("Speech not supported");
       return;
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
     recognition.start();
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      if (event.results && event.results[0] && event.results[0][0]) {
-        const text = event.results[0][0].transcript;
-        setInput(text);
-      }
-    };
+    recognition.onresult = (event: any) => {
+      const text = event.results[0][0].transcript;
 
-    recognition.onerror = (event: Event) => {
-      console.error("Speech recognition error:", event);
+      // 🔥 directly ChatKit me bhejo
+      const control = chatkit.control as any;
+      control.addMessage({
+        role: "user",
+        content: text,
+      });
     };
   };
 
-  // 🔊 Text → Speech
+  // 🔊 Voice reply
   const speak = (text: string) => {
     if (!voiceReply) return;
-
-    if (!window.speechSynthesis) {
-      console.warn("Speech Synthesis not supported");
-      return;
-    }
 
     const utterance = new SpeechSynthesisUtterance(text);
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
   };
 
-  // 📤 Send Message
-  const handleSend = async () => {
-    if (!input.trim()) return;
-
-    try {
-      const control = chatkit.control as any;
-      await control.addMessage({
-        role: "user",
-        content: input,
-      });
-      setInput("");
-    } catch (error) {
-      console.error("Failed to send message:", error);
-    }
-  };
-
-  // 🔥 Auto Voice Reply
+  // 🔥 Auto voice reply
   useEffect(() => {
     if (!chatkit.control) return;
     
     const control = chatkit.control as any;
-    
     const handleMessage = (state: any) => {
       const msgs = state?.messages || [];
       const last = msgs[msgs.length - 1];
@@ -97,42 +75,32 @@ export function ChatKitPanel() {
   }, [chatkit, voiceReply]);
 
   return (
-    <div className="relative flex flex-col h-[90vh] w-full bg-slate-900">
-      <div className="flex-1 overflow-hidden">
-        <ChatKit control={chatkit.control} className="h-full w-full" />
-      </div>
+    <div className="relative flex h-[90vh] w-full">
 
-      <div className="w-full px-4 py-4 bg-slate-900">
-        <div className="flex gap-2 bg-black/60 p-3 rounded-full items-center">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
-            className="flex-1 bg-transparent text-white outline-none"
-            placeholder="Type message..."
-          />
+      {/* ✅ ORIGINAL ChatKit UI */}
+      <ChatKit control={chatkit.control} className="h-full w-full" />
 
-          <button 
-            onClick={startListening}
-            className="text-white text-xl hover:text-gray-300"
-          >
-            🎤
-          </button>
+      {/* ✅ 🔥 Overlay buttons (NO extra input bar) */}
+      <div className="absolute bottom-5 right-6 flex gap-3">
 
-          <button
-            onClick={() => setVoiceReply(!voiceReply)}
-            className={`text-xl transition-colors ${voiceReply ? "text-green-400" : "text-white hover:text-gray-300"}`}
-          >
-            🔊
-          </button>
+        {/* 🎤 MIC */}
+        <button
+          onClick={startListening}
+          className="bg-black text-white p-3 rounded-full shadow-lg"
+        >
+          🎤
+        </button>
 
-          <button 
-            onClick={handleSend} 
-            className="bg-white text-black px-4 py-2 rounded-full hover:bg-gray-200 font-semibold"
-          >
-            ↑
-          </button>
-        </div>
+        {/* 🔊 VOICE TOGGLE */}
+        <button
+          onClick={() => setVoiceReply(!voiceReply)}
+          className={`p-3 rounded-full shadow-lg ${
+            voiceReply ? "bg-green-500 text-white" : "bg-black text-white"
+          }`}
+        >
+          🔊
+        </button>
+
       </div>
     </div>
   );
