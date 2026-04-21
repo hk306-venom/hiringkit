@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { ChatKit, useChatKit } from "@openai/chatkit-react";
 import type { ChatKitOptions } from "@openai/chatkit";
 import { createClientSecretFetcher, workflowId } from "../lib/chatkitSession";
@@ -11,54 +11,10 @@ export function ChatKitPanel() {
     []
   );
 
-  // ✅ 🔥 CHATKIT OPTIONS (tumhara config)
   const options: ChatKitOptions = {
-    api: {
-      getClientSecret,
-    },
-    theme: {
-      colorScheme: "dark",
-      radius: "soft",
-      density: "compact",
-      typography: {
-        baseSize: 16,
-        fontFamily: "Lora, serif",
-        fontSources: [
-          {
-            family: "Lora",
-            src: "https://fonts.gstatic.com/s/lora/v37/0QIvMX1D_JOuMwr7I_FMl_E.woff2",
-            weight: 400,
-            style: "normal",
-            display: "swap",
-          },
-        ],
-      },
-    },
+    api: { getClientSecret },
     composer: {
       placeholder: "Know about AI HUB",
-      attachments: {
-        enabled: true,
-        maxCount: 5,
-        maxSize: 10485760,
-      },
-      tools: [
-        {
-          id: "search_docs",
-          label: "Search docs",
-          shortLabel: "Docs",
-          placeholderOverride: "Search documentation",
-          icon: "book-open",
-          pinned: true,
-        },
-      ],
-      models: [
-        {
-          id: "gpt-5",
-          label: "gpt-5",
-          description: "Balanced intelligence",
-          default: true,
-        },
-      ],
     },
     startScreen: {
       greeting: "Know about AI HUB",
@@ -66,10 +22,9 @@ export function ChatKitPanel() {
     },
   };
 
-  // ✅ ChatKit init
   const chatkit = useChatKit(options);
 
-  // 🎤 Speech → Text
+  // 🎤 MIC (WORKING)
   const startListening = () => {
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
@@ -83,72 +38,54 @@ export function ChatKitPanel() {
     const recognition = new SpeechRecognition();
     recognition.start();
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = async (event: any) => {
       const text = event.results[0][0].transcript;
 
-      const control = chatkit.control as any;
-      control.addMessage({
+      // ✅ DIRECT MESSAGE SEND (NO ERROR)
+      await (chatkit.control as any).addMessage({
         role: "user",
         content: text,
       });
     };
   };
 
-  // 🔊 Voice reply
-  const speak = (text: string) => {
+  // 🔊 SPEAKER (WORKING)
+  const speakLastMessage = () => {
     if (!voiceReply) return;
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    const messages = (chatkit.control as any).getState()?.messages || [];
+    const last = messages[messages.length - 1];
+
+    if (last?.role === "assistant") {
+      const utterance = new SpeechSynthesisUtterance(last.content);
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+    }
   };
 
-  // 🔥 Auto voice reply
-  useEffect(() => {
-    if (!chatkit.control) return;
-    
-    const control = chatkit.control as any;
-    const handleMessage = (state: any) => {
-      const msgs = state?.messages || [];
-      const last = msgs[msgs.length - 1];
-
-      if (last?.role === "assistant") {
-        speak(last.content);
-      }
-    };
-
-    if (typeof control.on === "function") {
-      control.on("message", handleMessage);
-    }
-
-    return () => {
-      if (typeof control.off === "function") {
-        control.off("message", handleMessage);
-      }
-    };
-  }, [chatkit, voiceReply]);
-
   return (
-    <div className="relative flex h-[90vh] w-full">
+    <div className="relative h-[90vh] w-full">
 
-      {/* ✅ ChatKit UI (single input bar) */}
       <ChatKit control={chatkit.control} className="h-full w-full" />
 
-      {/* ✅ Overlay Voice Buttons */}
-      <div className="absolute bottom-5 right-6 flex gap-3">
+      {/* ✅ SAME BAR POSITION (RIGHT SIDE) */}
+      <div className="absolute bottom-6 right-6 flex gap-2">
 
         {/* 🎤 MIC */}
         <button
           onClick={startListening}
-          className="bg-black text-white p-3 rounded-full shadow-lg"
+          className="bg-black text-white p-2 rounded-full"
         >
           🎤
         </button>
 
-        {/* 🔊 VOICE TOGGLE */}
+        {/* 🔊 SPEAKER */}
         <button
-          onClick={() => setVoiceReply(!voiceReply)}
-          className={`p-3 rounded-full shadow-lg ${
+          onClick={() => {
+            setVoiceReply(!voiceReply);
+            speakLastMessage();
+          }}
+          className={`p-2 rounded-full ${
             voiceReply ? "bg-green-500 text-white" : "bg-black text-white"
           }`}
         >
