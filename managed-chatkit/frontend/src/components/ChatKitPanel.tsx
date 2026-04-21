@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { ChatKit, useChatKit } from "@openai/chatkit-react";
+import type { ChatKitOptions } from "@openai/chatkit";
 import { createClientSecretFetcher, workflowId } from "../lib/chatkitSession";
 
 export function ChatKitPanel() {
@@ -10,9 +11,63 @@ export function ChatKitPanel() {
     []
   );
 
-  const chatkit = useChatKit({
-    api: { getClientSecret },
-  });
+  // ✅ 🔥 CHATKIT OPTIONS (tumhara config)
+  const options: ChatKitOptions = {
+    api: {
+      getClientSecret,
+    },
+    theme: {
+      colorScheme: "dark",
+      radius: "soft",
+      density: "compact",
+      typography: {
+        baseSize: 16,
+        fontFamily: "Lora, serif",
+        fontSources: [
+          {
+            family: "Lora",
+            src: "https://fonts.gstatic.com/s/lora/v37/0QIvMX1D_JOuMwr7I_FMl_E.woff2",
+            weight: 400,
+            style: "normal",
+            display: "swap",
+          },
+        ],
+      },
+    },
+    composer: {
+      placeholder: "Know about AI HUB",
+      attachments: {
+        enabled: true,
+        maxCount: 5,
+        maxSize: 10485760,
+      },
+      tools: [
+        {
+          id: "search_docs",
+          label: "Search docs",
+          shortLabel: "Docs",
+          placeholderOverride: "Search documentation",
+          icon: "book-open",
+          pinned: true,
+        },
+      ],
+      models: [
+        {
+          id: "gpt-5",
+          label: "gpt-5",
+          description: "Balanced intelligence",
+          default: true,
+        },
+      ],
+    },
+    startScreen: {
+      greeting: "Know about AI HUB",
+      prompts: [],
+    },
+  };
+
+  // ✅ ChatKit init
+  const chatkit = useChatKit(options);
 
   // 🎤 Speech → Text
   const startListening = () => {
@@ -31,7 +86,6 @@ export function ChatKitPanel() {
     recognition.onresult = (event: any) => {
       const text = event.results[0][0].transcript;
 
-      // 🔥 directly ChatKit me bhejo
       const control = chatkit.control as any;
       control.addMessage({
         role: "user",
@@ -77,10 +131,10 @@ export function ChatKitPanel() {
   return (
     <div className="relative flex h-[90vh] w-full">
 
-      {/* ✅ ORIGINAL ChatKit UI */}
+      {/* ✅ ChatKit UI (single input bar) */}
       <ChatKit control={chatkit.control} className="h-full w-full" />
 
-      {/* ✅ 🔥 Overlay buttons (NO extra input bar) */}
+      {/* ✅ Overlay Voice Buttons */}
       <div className="absolute bottom-5 right-6 flex gap-3">
 
         {/* 🎤 MIC */}
