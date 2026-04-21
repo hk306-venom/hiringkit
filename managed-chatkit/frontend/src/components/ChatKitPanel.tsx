@@ -97,33 +97,41 @@ export function ChatKitPanel() {
   }, [chatkit, voiceReply]);
 
   return (
-    <div className="relative flex h-[90vh] w-full bg-slate-900">
+    <div className="relative flex flex-col h-[90vh] w-full bg-slate-900">
+      <div className="flex-1 overflow-hidden">
+        <ChatKit control={chatkit.control} className="h-full w-full" />
+      </div>
 
-      <ChatKit control={chatkit.control} className="h-full w-full" />
-
-      <div className="absolute bottom-4 left-1/2 w-[90%] max-w-2xl -translate-x-1/2">
-        <div className="flex gap-2 bg-black/60 p-3 rounded-full">
-
+      <div className="w-full px-4 py-4 bg-slate-900">
+        <div className="flex gap-2 bg-black/60 p-3 rounded-full items-center">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSend()}
             className="flex-1 bg-transparent text-white outline-none"
             placeholder="Type message..."
           />
 
-          <button onClick={startListening}>🎤</button>
+          <button 
+            onClick={startListening}
+            className="text-white text-xl hover:text-gray-300"
+          >
+            🎤
+          </button>
 
           <button
             onClick={() => setVoiceReply(!voiceReply)}
-            className={voiceReply ? "text-green-400" : ""}
+            className={`text-xl transition-colors ${voiceReply ? "text-green-400" : "text-white hover:text-gray-300"}`}
           >
             🔊
           </button>
 
-          <button onClick={handleSend} className="bg-white text-black px-2 rounded">
+          <button 
+            onClick={handleSend} 
+            className="bg-white text-black px-4 py-2 rounded-full hover:bg-gray-200 font-semibold"
+          >
             ↑
           </button>
-
         </div>
       </div>
     </div>
