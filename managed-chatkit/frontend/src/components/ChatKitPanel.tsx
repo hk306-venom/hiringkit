@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ChatKit, useChatKit } from "@openai/chatkit-react";
 import type { ChatKitOptions } from "@openai/chatkit";
 import { createClientSecretFetcher, workflowId } from "../lib/chatkitSession";
@@ -11,10 +11,54 @@ export function ChatKitPanel() {
     []
   );
 
+  // ✅ 🔥 CHATKIT OPTIONS (tumhara config)
   const options: ChatKitOptions = {
-    api: { getClientSecret },
+    api: {
+      getClientSecret,
+    },
+    theme: {
+      colorScheme: "dark",
+      radius: "soft",
+      density: "compact",
+      typography: {
+        baseSize: 16,
+        fontFamily: "Lora, serif",
+        fontSources: [
+          {
+            family: "Lora",
+            src: "https://fonts.gstatic.com/s/lora/v37/0QIvMX1D_JOuMwr7I_FMl_E.woff2",
+            weight: 400,
+            style: "normal",
+            display: "swap",
+          },
+        ],
+      },
+    },
     composer: {
       placeholder: "Know about AI HUB",
+      attachments: {
+        enabled: true,
+        maxCount: 5,
+        maxSize: 10485760,
+      },
+      tools: [
+        {
+          id: "search_docs",
+          label: "Search docs",
+          shortLabel: "Docs",
+          placeholderOverride: "Search documentation",
+          icon: "book-open",
+          pinned: true,
+        },
+      ],
+      models: [
+        {
+          id: "gpt-5",
+          label: "gpt-5",
+          description: "Balanced intelligence",
+          default: true,
+        },
+      ],
     },
     startScreen: {
       greeting: "Know about AI HUB",
@@ -22,9 +66,10 @@ export function ChatKitPanel() {
     },
   };
 
+  // ✅ ChatKit init
   const chatkit = useChatKit(options);
 
-  // 🎤 MIC (WORKING)
+  // 🎤 Speech → Text
   const startListening = () => {
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
@@ -38,54 +83,77 @@ export function ChatKitPanel() {
     const recognition = new SpeechRecognition();
     recognition.start();
 
-    recognition.onresult = async (event: any) => {
+    recognition.onresult = (event: any) => {
       const text = event.results[0][0].transcript;
 
-      // ✅ DIRECT MESSAGE SEND (NO ERROR)
-      await (chatkit.control as any).addMessage({
+      const control = chatkit.control as any;
+      control.addMessage({
         role: "user",
         content: text,
       });
     };
   };
 
-  // 🔊 SPEAKER (WORKING)
-  const speakLastMessage = () => {
+  // 🔊 Voice reply
+  const speak = (text: string) => {
     if (!voiceReply) return;
 
-    const messages = (chatkit.control as any).getState()?.messages || [];
-    const last = messages[messages.length - 1];
-
-    if (last?.role === "assistant") {
-      const utterance = new SpeechSynthesisUtterance(last.content);
-      speechSynthesis.cancel();
-      speechSynthesis.speak(utterance);
-    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
   };
 
-  return (
-    <div className="relative h-[90vh] w-full">
+  // 🔥 Auto voice reply
+  useEffect(() => {
+    if (!chatkit.control) return;
 
+    const control = chatkit.control as any;
+    const handleStateChange = (state: any) => {
+      const msgs = state?.messages || [];
+      const last = msgs[msgs.length - 1];
+
+      if (last?.role === "assistant") {
+        speak(last.content);
+      }
+    };
+
+    // Try to use subscribe if available, otherwise use on/off pattern
+    if (typeof control.subscribe === "function") {
+      const unsub = control.subscribe(handleStateChange);
+      return () => {
+        if (typeof unsub === "function") unsub();
+      };
+    } else if (typeof control.on === "function") {
+      control.on("message", handleStateChange);
+      return () => {
+        if (typeof control.off === "function") {
+          control.off("message", handleStateChange);
+        }
+      };
+    }
+  }, [chatkit, voiceReply]);
+
+  return (
+    <div className="relative flex h-[90vh] w-full">
+
+      {/* ✅ ChatKit UI (single input bar) */}
       <ChatKit control={chatkit.control} className="h-full w-full" />
 
-      {/* ✅ SAME BAR POSITION (RIGHT SIDE) */}
-      <div className="absolute bottom-6 right-6 flex gap-2">
+      {/* ✅ Overlay Voice Buttons */}
+      <div className="absolute bottom-5 right-6 flex gap-3">
 
         {/* 🎤 MIC */}
         <button
           onClick={startListening}
-          className="bg-black text-white p-2 rounded-full"
+          className="bg-black text-white p-3 rounded-full shadow-lg"
         >
           🎤
         </button>
 
-        {/* 🔊 SPEAKER */}
+        {/* 🔊 VOICE TOGGLE */}
         <button
-          onClick={() => {
-            setVoiceReply(!voiceReply);
-            speakLastMessage();
-          }}
-          className={`p-2 rounded-full ${
+          onClick={() => setVoiceReply(!voiceReply)}
+          className={`p-3 rounded-full shadow-lg ${
             voiceReply ? "bg-green-500 text-white" : "bg-black text-white"
           }`}
         >
