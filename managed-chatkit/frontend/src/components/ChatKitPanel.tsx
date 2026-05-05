@@ -9,31 +9,46 @@ export function ChatKitPanel() {
     []
   );
 
-  // ✅ 🔥 CLEAN + UPGRADED OPTIONS (NO VOICE)
   const options: ChatKitOptions = {
     api: {
       getClientSecret,
     },
     theme: {
       colorScheme: 'dark',
-      radius: 'soft',
+      radius: 'pill',
       density: 'compact',
+      color: {
+        grayscale: {
+          hue: 0,
+          tint: 0
+        },
+        accent: {
+          primary: '#233a48',
+          level: 1
+        },
+        surface: {
+          background: '#102b2d',
+          foreground: '#0e2025'
+        }
+      },
       typography: {
         baseSize: 16,
-        fontFamily: 'Lora, serif',
+        fontFamily: '"OpenAI Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
+        fontFamilyMono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "DejaVu Sans Mono", "Courier New", monospace',
         fontSources: [
           {
-            family: 'Lora',
-            src: 'https://fonts.gstatic.com/s/lora/v37/0QIvMX1D_JOuMwr7I_FMl_E.woff2',
+            family: 'OpenAI Sans',
+            src: 'https://cdn.openai.com/common/fonts/openai-sans/v2/OpenAISans-Regular.woff2',
             weight: 400,
             style: 'normal',
-            display: 'swap',
-          },
-        ],
+            display: 'swap'
+          }
+        ]
       },
     },
+
     composer: {
-      placeholder: 'Know about AI HUB',
+      placeholder: 'Drop CV, Get Score',
       attachments: {
         enabled: true,
         maxCount: 5,
@@ -58,8 +73,9 @@ export function ChatKitPanel() {
         },
       ],
     },
+
     startScreen: {
-      greeting: 'Welcome to Gateway of Future (AI HUB)',
+      greeting: 'Upload. Fix. Get Hired.',
       prompts: [],
     },
   };
@@ -71,4 +87,4 @@ export function ChatKitPanel() {
       <ChatKit control={chatkit.control} className="h-full w-full" />
     </div>
   );
-}       
+}
