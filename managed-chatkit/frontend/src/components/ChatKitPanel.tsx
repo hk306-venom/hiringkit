@@ -23,12 +23,12 @@ export function ChatKitPanel() {
           tint: 0
         },
         accent: {
-          primary: '#233a48',
+          primary: '#2c6181',
           level: 1
         },
         surface: {
-          background: '#102b2d',
-          foreground: '#0e2025'
+          background: '#1c4f69',
+          foreground: '#003247'
         }
       },
       typography: {
@@ -48,7 +48,7 @@ export function ChatKitPanel() {
     },
 
     composer: {
-      placeholder: 'Drop CV, Get Score',
+      placeholder: 'Upload Resume, Get Score',
       attachments: {
         enabled: true,
         maxCount: 5,
